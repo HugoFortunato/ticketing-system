@@ -1,78 +1,78 @@
 # Ticketing System
 
-Laboratório de **system design**: uma plataforma de eventos e reserva de ingressos, inspirada conceitualmente no Ticketmaster — **não é um clone**.
+A **system design** lab: an events and ticket-reservation platform, conceptually inspired by Ticketmaster — **not a clone**.
 
-A V1 está pronta: monólito modular (React + Fastify + PostgreSQL), fluxo completo **evento → sessão → assento → reserva → ingresso**, e um baseline de carga com **k6**. Gargalos eram esperados. Fazem parte do experimento.
+V1 is done: a modular monolith (React + Fastify + PostgreSQL), the full flow **event → session → seat → reservation → ticket**, and a **k6** load baseline. Bottlenecks were expected. They are part of the experiment.
 
-> **EN** — Educational ticketing lab. V1 is a modular monolith measured with k6. Redis, Elasticsearch, Debezium and Kafka are the target architecture, added one piece at a time when the numbers justify it.
+Redis, Elasticsearch, Debezium, and Kafka are the target architecture, added one piece at a time when the numbers justify it.
 
 | Status | Stack | Baseline |
 | --- | --- | --- |
-| **V1 completa** · V2 = Redis | Vite, Fastify, Prisma, PostgreSQL 16, k6 | [monitoring/without-redis](monitoring/without-redis/) |
+| **V1 complete** · V2 = Redis | Vite, Fastify, Prisma, PostgreSQL 16, k6 | [monitoring/without-redis](monitoring/without-redis/) |
 
-- [Objetivos](#objetivos)
-- [Arquitetura](#arquitetura)
-- [Como executar](#como-executar)
-- [Baseline k6 (sem Redis)](#baseline-k6-sem-redis)
-- [Domínio e API](#domínio-e-api)
+- [Goals](#goals)
+- [Architecture](#architecture)
+- [Getting started](#getting-started)
+- [k6 baseline (no Redis)](#k6-baseline-no-redis)
+- [Domain and API](#domain-and-api)
 - [Roadmap](#roadmap)
 
 ---
 
-## Objetivos
+## Goals
 
-1. **Aprender arquitetura na prática**, não só no whiteboard. Spec primeiro ([`specs/ticketing-system-plan-v1.md`](specs/ticketing-system-plan-v1.md)), código depois.
-2. **Entregar um produto mínimo real**: listar eventos, escolher sessão, reservar assentos, confirmar ingresso.
-3. **Medir antes de otimizar.** Cada carga k6 vira relatório em `monitoring/` (mediana, p95/p99, VUs, req/s). Sem Redis na V1 de propósito.
-4. **Evoluir só quando o número pedir.** Redis, Elasticsearch, Debezium e Kafka entram um de cada vez, com o mesmo teste repetido para comparar.
+1. **Learn architecture in code**, not only on a whiteboard. Spec first ([`specs/ticketing-system-plan-v1.md`](specs/ticketing-system-plan-v1.md)), then implementation.
+2. **Ship a real minimum product**: list events, pick a session, reserve seats, confirm a ticket.
+3. **Measure before optimizing.** Each k6 run becomes a report under `monitoring/` (median, p95/p99, VUs, req/s). No Redis in V1 on purpose.
+4. **Evolve when the numbers ask for it.** Redis, Elasticsearch, Debezium, and Kafka land one at a time, with the same tests re-run for comparison.
 
-O que este repo **não** pretende ser: um SaaS de produção, um clone fiel do Ticketmaster, nem um monólito eterno. É um laboratório versionado.
+This repo is **not** a production SaaS, a faithful Ticketmaster clone, or a forever-monolith. It is a versioned lab.
 
 ---
 
-## Arquitetura
+## Architecture
 
-### Hoje (V1)
+### Today (V1)
 
 ```
 Frontend (Vite + React)
         ↓ HTTP
-Backend (Fastify, monólito modular)
+Backend (Fastify, modular monolith)
         ↓ SQL
 PostgreSQL
 ```
 
-Um processo Fastify, organizado por domínio (`events`, `sessions`, `seats`, `reservations`, `tickets`). Sem cache, fila, search engine ou microservices. A concorrência de assentos é a unique `(sessionId, seatId)` no Postgres.
+One Fastify process, organized by domain (`events`, `sessions`, `seats`, `reservations`, `tickets`). No cache, queue, search engine, or microservices. Seat concurrency is the unique `(sessionId, seatId)` constraint in Postgres.
 
-### Alvo (system design)
+### Target (system design)
 
-O diagrama abaixo é o **norte** — ainda não está todo no código. A V2 começa pelo Redis (cache de leitura de eventos + hold de reserva com TTL).
+The diagram below is the **north star** — it is not all in code yet. V2 starts with Redis (event-read cache + reservation hold with TTL).
 
-![System design alvo: API Gateway, Search, Event, Booking, Redis, Elasticsearch, Debezium e Kafka](docs/images/architecture.png)
+![Target system design: API Gateway, Search, Event, Booking, Redis, Elasticsearch, Debezium, and Kafka](docs/images/architecture.png)
 
-| Bloco | Papel |
+| Block | Role |
 | --- | --- |
-| **API Gateway** | Entrada única; roteia para Search, Event e Booking |
-| **Search** | Busca em **Elasticsearch** |
-| **Event** | Catálogo; cache Redis nas leituras quentes |
-| **Booking** | Reserva; hold no Redis com **TTL** (no diagrama, 7 min) |
-| **PostgreSQL** | Fonte da verdade |
-| **Debezium → Kafka → Worker** | CDC: mudanças no banco alimentam o índice de busca |
+| **API Gateway** | Single entry point; routes to Search, Event, and Booking |
+| **Search** | Queries **Elasticsearch** |
+| **Event** | Catalog; Redis cache on hot reads |
+| **Booking** | Reservations; Redis hold with **TTL** (7 min in the diagram) |
+| **PostgreSQL** | Source of truth |
+| **Debezium → Kafka → Worker** | CDC: database changes feed the search index |
 
-Cada peça entra quando o baseline mostrar o gargalo correspondente. Relatórios futuros: [`monitoring/with-redis/`](monitoring/with-redis/).
+Each piece lands when the baseline shows the matching bottleneck. Future reports: [`monitoring/with-redis/`](monitoring/with-redis/).
 
 ---
 
-## Como executar
+## Getting started
 
-Pré-requisitos: **Node 20+**, **pnpm 9+**, **Docker** (PostgreSQL). **k6** só para load test.
+Prerequisites: **Node 20+**, **pnpm 9+**, **Docker** (PostgreSQL). **k6** is only needed for load tests.
 
 ```bash
 pnpm install
 
-# banco
+# database
 pnpm db:up
-# no WSL sem o binário docker: docker.exe compose up -d postgres
+# on WSL without a docker binary: docker.exe compose up -d postgres
 
 pnpm db:migrate
 pnpm db:seed
@@ -81,39 +81,39 @@ pnpm db:seed
 pnpm dev
 ```
 
-Copie [`.env.example`](.env.example) se precisar. A API lê `apps/api/.env`.
+Copy [`.env.example`](.env.example) if you need to override defaults. The API reads `apps/api/.env`.
 
 ```bash
-pnpm test          # fluxos críticos da API
-pnpm db:studio     # Prisma Studio em :5555
+pnpm test          # critical API flows
+pnpm db:studio     # Prisma Studio on :5555
 ```
 
-### Estrutura
+### Layout
 
 ```
 apps/api          Fastify + Prisma
 apps/web          Vite + React
-load-tests/       scripts k6
-monitoring/       relatórios de carga (with / without Redis)
+load-tests/       k6 scripts
+monitoring/       load reports (with / without Redis)
 docs/images/      system design
-specs/            spec da V1
+specs/            V1 spec
 ```
 
 ---
 
-## Baseline k6 (sem Redis)
+## k6 baseline (no Redis)
 
-Máquina: WSL2, 8 vCPU, 7.7 GiB RAM · k6 v0.57.0 · **20 s** por carga · 2026-08-26.
+Machine: WSL2, 8 vCPU, 7.7 GiB RAM · k6 v0.57.0 · **20 s** per load · 2026-08-26.
 
-No WSL o relógio às vezes salta: ignore `avg`/`max` absurdos e use **mediana** e **p95**. Análise completa em cada arquivo da pasta [`monitoring/without-redis/`](monitoring/without-redis/). Protocolo: [`monitoring/README.md`](monitoring/README.md).
+On WSL the clock sometimes jumps: ignore absurd `avg`/`max` values and use **median** and **p95**. Full write-ups live under [`monitoring/without-redis/`](monitoring/without-redis/). Protocol: [`monitoring/README.md`](monitoring/README.md).
 
-Tempos em **ms**. Falha = erro de transporte (409 de assento ocupado **não** conta como falha HTTP).
+Times in **ms**. Failure = transport error (a 409 for a taken seat is **not** an HTTP failure).
 
 ### `GET /events`
 
-Catálogo com venue e **todas** as sessões. Sem paginação. Toda listagem bate no Postgres.
+Catalog with venue and **all** sessions. No pagination. Every listing hits Postgres.
 
-| VUs | Requests | req/s | med | p95 | p99 | Falhas |
+| VUs | Requests | req/s | med | p95 | p99 | Failures |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | 10 | 1880 | 93.7 | 5.3 | 8.4 | 15.5 | 0% |
 | 50 | 9029 | ~450 | 6.5 | 34.1 | 65.7 | 0% |
@@ -121,15 +121,15 @@ Catálogo com venue e **todas** as sessões. Sem paginação. Toda listagem bate
 | 500 | 18479 | 903 | 216 | 395 | 12326 | 0% |
 | 1000 | 18621 | 835 | 438 | 1007 | 22021 | 0% |
 
-Até 50 VUs o p95 ainda é baixo. Em 500–1000 VUs o throughput **não escala** (903 → 835 req/s): o servidor não cai, só fica lento. Candidatos V2: cache Redis da listagem + payload mais magro (a home não precisa de todas as sessões).
+Through 50 VUs, p95 is still low. At 500–1000 VUs throughput **does not scale** (903 → 835 req/s): the server stays up, it just gets slow. V2 candidates: Redis cache for the listing + a slimmer payload (the home page does not need every session).
 
-Detalhes: [`monitoring/without-redis/events.md`](monitoring/without-redis/events.md).
+Details: [`monitoring/without-redis/events.md`](monitoring/without-redis/events.md).
 
 ### `GET /sessions/:id/seats`
 
-192 assentos + expiração lazy no request. Já em 10 VUs é mais lento que `/events`.
+192 seats + lazy expiry on the request path. Already slower than `/events` at 10 VUs.
 
-| VUs | Requests | req/s | med | p95 | p99 | Falhas |
+| VUs | Requests | req/s | med | p95 | p99 | Failures |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | 10 | 1775 | 85.4 | 10.2 | 17.3 | 34.3 | 0% |
 | 50 | 5403 | 268 | 71.3 | 175 | 233 | 0% |
@@ -137,13 +137,13 @@ Detalhes: [`monitoring/without-redis/events.md`](monitoring/without-redis/events
 | 500 | 6126 | 270 | 644 | 20710 | 22450 | 0% |
 | 1000 | 6520 | 194 | 969 | 25182 | 29328 | 0.15% |
 
-Throughput estagna ~270 req/s a partir de 50–100 VUs. Em 1000 VUs aparece timeout de conexão. Candidato Redis: snapshot de disponibilidade da sessão com TTL curto.
+Throughput plateaus around ~270 req/s from 50–100 VUs. At 1000 VUs, connection timeouts appear. Redis candidate: a short-TTL snapshot of session availability.
 
-Detalhes: [`monitoring/without-redis/seats.md`](monitoring/without-redis/seats.md).
+Details: [`monitoring/without-redis/seats.md`](monitoring/without-redis/seats.md).
 
 ### `POST /sessions/:id/reservations`
 
-Cada iteração: GET seats → POST reserva (1–2 assentos). Seed completo **antes de cada carga**. `created` trava em ~150: teto do inventário (192 lugares), não da API.
+Each iteration: GET seats → POST reservation (1–2 seats). Full seed **before each load**. `created` caps around ~150: venue inventory (192 seats), not API capacity.
 
 | VUs | HTTP reqs | req/s | med | p95 | HTTP fail | created | conflicts |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -153,25 +153,25 @@ Cada iteração: GET seats → POST reserva (1–2 assentos). Seed completo **an
 | 500 | 2937 | 116 | 4244 | 6954 | 10.1% | 34% (151) | 66% (297) |
 | 1000 | 4090 | 115 | 8048 | 10779 | 46.3% | 7% (152) | 16% (330) |
 
-A unique impede overselling: 409 é corrida real, não bug. Em 1000 VUs quase metade das requests nem chega no banco (`dial` / timeout).
+The unique constraint prevents overselling: 409 is a real race, not a bug. At 1000 VUs almost half of the requests never reach the database (`dial` / timeout).
 
-Detalhes: [`monitoring/without-redis/reservations.md`](monitoring/without-redis/reservations.md).
+Details: [`monitoring/without-redis/reservations.md`](monitoring/without-redis/reservations.md).
 
-### Como repetir
+### How to re-run
 
 ```bash
 k6 run -e VUS=10 -e DURATION=20s load-tests/events.js
 k6 run -e VUS=10 -e DURATION=20s load-tests/seats.js
 
-pnpm db:seed   # inventário limpo antes de cada carga de reserva
+pnpm db:seed   # clean inventory before each reservation load
 k6 run -e VUS=10 -e DURATION=20s load-tests/reservations.js
 ```
 
-Variáveis: `BASE_URL`, `VUS`, `DURATION`, `SESSION_ID`, `USER_IDS`.
+Variables: `BASE_URL`, `VUS`, `DURATION`, `SESSION_ID`, `USER_IDS`.
 
 ---
 
-## Domínio e API
+## Domain and API
 
 ```
 User
@@ -184,32 +184,32 @@ Reservation (PENDING | CONFIRMED | CANCELLED | EXPIRED)
 Ticket                 UNIQUE (sessionId, seatId)
 ```
 
-Reserva `PENDING` expira de forma **lazy** (`RESERVATION_TTL_SECONDS=600`). Sem worker e sem TTL no Redis — isso muda na V2.
+`PENDING` reservations expire **lazily** (`RESERVATION_TTL_SECONDS=600`). No worker and no Redis TTL — that changes in V2.
 
-Auth da V1: header `x-user-id` (sem JWT). Seed: usuária Ana `11111111-1111-4111-a111-111111111111`, sessão Noite Elétrica `44444444-4444-4444-a444-444444444441`.
+V1 auth: `x-user-id` header (no JWT). Seed: user Ana `11111111-1111-4111-a111-111111111111`, session Noite Elétrica `44444444-4444-4444-a444-444444444441`.
 
-| Método | Rota |
+| Method | Route |
 | --- | --- |
 | `GET` | `/health` `/users` `/venues` `/events` `/events/:id` `/sessions/:id` `/sessions/:id/seats` `/reservations/:id` `/tickets/:id` |
 | `POST` | `/events` `/events/:id/sessions` `/sessions/:id/reservations` `/reservations/:id/confirm` |
-| `PATCH` / `DELETE` | `/events/:id` · cancelar reserva |
+| `PATCH` / `DELETE` | `/events/:id` · cancel reservation |
 
-Fluxo: lista → sessão → mapa de assentos (`available \| held \| sold`) → `PENDING` → confirm emite `Ticket`. Unique violation → `409`.
+Flow: list → session → seat map (`available \| held \| sold`) → `PENDING` → confirm issues a `Ticket`. Unique violation → `409`.
 
 ---
 
 ## Roadmap
 
-| Versão | O quê | Por quê (pelo baseline) |
+| Version | What | Why (from the baseline) |
 | --- | --- | --- |
-| **V1** | Monólito + Postgres | Produto e medição. Feito. |
-| **V2** | Redis: cache `GET /events` + hold/TTL de reserva | Listagem e mapa de assentos saturam o banco; expiração lazy no request path |
-| **V3+** | Kafka, Elasticsearch, Debezium/CDC, gateway | Busca, desacoplamento e projeção — quando leitura/índice pedirem |
+| **V1** | Monolith + Postgres | Product and measurement. Done. |
+| **V2** | Redis: cache `GET /events` + reservation hold/TTL | Listing and seat map saturate the DB; lazy expiry sits on the request path |
+| **V3+** | Kafka, Elasticsearch, Debezium/CDC, gateway | Search, decoupling, and projection — when reads/index need it |
 
-Decisões da V1 (propositalmente simples): Fastify em vez de Nest, Vite em vez de Next, unique constraint em vez de lock pessimista, Prisma só na API.
+V1 choices (deliberately simple): Fastify instead of Nest, Vite instead of Next, unique constraint instead of pessimistic locking, Prisma only on the API.
 
 ---
 
-## Licença
+## License
 
 [MIT](LICENSE) © Hugo Fortunato
