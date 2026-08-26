@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  EXPIRED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reservations Reservation[]
+  tickets      Ticket[]
+}
+
+model Venue {
+  id        String   @id @default(uuid())
+  name      String
+  address   String
+  city      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events Event[]
+  seats  Seat[]
+  sessions Session[]
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  imageUrl    String
+  category    String
+  venueId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  venue    Venue     @relation(fields: [venueId], references: [id])
+  sessions Session[]
+
+  @@index([venueId])
+  @@index([category])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  eventId   String
+  venueId   String
+  startsAt  DateTime
+  endsAt    DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event            Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  venue            Venue             @relation(fields: [venueId], references: [id])
+  reservations     Reservation[]
+  reservationSeats ReservationSeat[]
+  tickets          Ticket[]
+
+  @@index([eventId])
+  @@index([venueId])
+  @@index([startsAt])
+}
+
+model Seat {
+  id        String   @id @default(uuid())
+  venueId   String
+  section   String   @default("Plateia")
+  row       String
+  number    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  venue            Venue             @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  reservationSeats ReservationSeat[]
+  tickets          Ticket[]
+
+  @@unique([venueId, section, row, number])
+  @@index([venueId])
+}
+
+model Reservation {
+  id        String            @id @default(uuid())
+  userId    String
+  sessionId String
+  status    ReservationStatus @default(PENDING)
+  expiresAt DateTime
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  user     User              @relation(fields: [userId], references: [id])
+  session  Session           @relation(fields: [sessionId], references: [id])
+  seats    ReservationSeat[]
+  tickets  Ticket[]
+
+  @@index([sessionId, status])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// Assento ocupado em uma sessão. A unique (sessionId, seatId) é o
+// mecanismo de concorrência da V1: o PostgreSQL rejeita overselling.
+// Assentos de reservas EXPIRED/CANCELLED são removidos daqui para liberar o lugar.
+model ReservationSeat {
+  id            String   @id @default(uuid())
+  reservationId String
+  sessionId     String
+  seatId        String
+  createdAt     DateTime @default(now())
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  session     Session     @relation(fields: [sessionId], references: [id])
+  seat        Seat        @relation(fields: [seatId], references: [id])
+
+  @@unique([sessionId, seatId])
+  @@index([reservationId])
+}
+
+model Ticket {
+  id            String   @id @default(uuid())
+  reservationId String
+  sessionId     String
+  seatId        String
+  userId        String
+  createdAt     DateTime @default(now())
+
+  reservation Reservation @relation(fields: [reservationId], references: [id])
+  session     Session     @relation(fields: [sessionId], references: [id])
+  seat        Seat        @relation(fields: [seatId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
+
+  @@unique([sessionId, seatId])
+  @@index([reservationId])
+  @@index([userId])
+}
