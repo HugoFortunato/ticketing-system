@@ -13,6 +13,9 @@ export const env = {
   PORT: Number(process.env.PORT ?? 3000),
   HOST: process.env.HOST ?? "0.0.0.0",
   DATABASE_URL: required("DATABASE_URL"),
+  REDIS_URL: process.env.REDIS_URL ?? "redis://localhost:6379",
+  EVENTS_CACHE_ENABLED: process.env.EVENTS_CACHE_ENABLED !== "false",
   LOG_LEVEL: process.env.LOG_LEVEL ?? "info",
   RESERVATION_TTL_SECONDS: Number(process.env.RESERVATION_TTL_SECONDS ?? 600),
+  EVENTS_CACHE_TTL_SECONDS: Number(process.env.EVENTS_CACHE_TTL_SECONDS ?? 60),
 };

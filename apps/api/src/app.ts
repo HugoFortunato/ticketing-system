@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import Fastify from "fastify";
 import { env } from "./config/env.js";
 import { prisma } from "./lib/prisma.js";
+import { redis } from "./lib/redis.js";
 import { setupErrorHandler } from "./plugins/error-handler.js";
 import { setupRequestLogger } from "./plugins/request-logger.js";
 import { eventRoutes } from "./modules/events/routes.js";
@@ -36,6 +37,7 @@ export async function buildApp() {
 
   app.addHook("onClose", async () => {
     await prisma.$disconnect();
+    redis?.disconnect();
   });
 
   return app;

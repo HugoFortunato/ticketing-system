@@ -21,6 +21,15 @@ export type Session = {
   event?: Event;
 };
 
+export type EventListItem = {
+  id: string;
+  name: string;
+  category: string;
+  imageUrl: string;
+  venue: { name: string; city: string };
+  nextSessionStartsAt: string | null;
+};
+
 export type Event = {
   id: string;
   name: string;

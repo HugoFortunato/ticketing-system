@@ -102,6 +102,34 @@ describe("fluxos críticos", () => {
     expect(body.venueId).toBe(venue.id);
   });
 
+  it("lista eventos só com campos da home e usa cache", async () => {
+    const miss = await app.inject({ method: "GET", url: "/events" });
+    expect(miss.statusCode).toBe(200);
+    expect(miss.headers["x-cache"]).toBe("MISS");
+
+    const body = miss.json() as Record<string, unknown>[];
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThan(0);
+
+    const item = body[0]!;
+    expect(item).toHaveProperty("id");
+    expect(item).toHaveProperty("name");
+    expect(item).toHaveProperty("category");
+    expect(item).toHaveProperty("imageUrl");
+    expect(item).toHaveProperty("nextSessionStartsAt");
+    expect(item).not.toHaveProperty("description");
+    expect(item).not.toHaveProperty("sessions");
+    expect(item.venue).toEqual(
+      expect.objectContaining({ name: expect.any(String), city: expect.any(String) }),
+    );
+    expect(item.venue).not.toHaveProperty("address");
+
+    const hit = await app.inject({ method: "GET", url: "/events" });
+    expect(hit.statusCode).toBe(200);
+    expect(hit.headers["x-cache"]).toBe("HIT");
+    expect(hit.json()).toEqual(body);
+  });
+
   it("cria uma sessão", async () => {
     const { event } = await createFixture();
     const startsAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();

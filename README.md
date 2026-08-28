@@ -38,11 +38,11 @@ This repo is **not** a production SaaS, a faithful Ticketmaster clone, or a fore
 Frontend (Vite + React)
         ↓ HTTP
 Backend (Fastify, modular monolith)
-        ↓ SQL
-PostgreSQL
+        ↓ SQL                    ↓ cache GET /events
+PostgreSQL                    Redis
 ```
 
-One Fastify process, organized by domain (`events`, `sessions`, `seats`, `reservations`, `tickets`). No cache, queue, search engine, or microservices. Seat concurrency is the unique `(sessionId, seatId)` constraint in Postgres.
+One Fastify process, organized by domain (`events`, `sessions`, `seats`, `reservations`, `tickets`). `GET /events` is a slim list (card fields + next session date) cached in Redis. Seat concurrency is the unique `(sessionId, seatId)` constraint in Postgres.
 
 ### Target (system design)
 
@@ -65,14 +65,14 @@ Each piece lands when the baseline shows the matching bottleneck. Future reports
 
 ## Getting started
 
-Prerequisites: **Node 20+**, **pnpm 9+**, **Docker** (PostgreSQL). **k6** is only needed for load tests.
+Prerequisites: **Node 20+**, **pnpm 9+**, **Docker** (PostgreSQL + Redis). **k6** is only needed for load tests.
 
 ```bash
 pnpm install
 
-# database
+# database + redis
 pnpm db:up
-# on WSL without a docker binary: docker.exe compose up -d postgres
+# on WSL without a docker binary: docker.exe compose up -d
 
 pnpm db:migrate
 pnpm db:seed
@@ -203,7 +203,7 @@ Flow: list → session → seat map (`available \| held \| sold`) → `PENDING` 
 | Version | What | Why (from the baseline) |
 | --- | --- | --- |
 | **V1** | Monolith + Postgres | Product and measurement. Done. |
-| **V2** | Redis: cache `GET /events` + reservation hold/TTL | Listing and seat map saturate the DB; lazy expiry sits on the request path |
+| **V2** (parcial) | Redis cache em `GET /events` | Listagem saturava o Postgres; detalhe do evento e hold de reserva ainda sem cache |
 | **V3+** | Kafka, Elasticsearch, Debezium/CDC, gateway | Search, decoupling, and projection — when reads/index need it |
 
 V1 choices (deliberately simple): Fastify instead of Nest, Vite instead of Next, unique constraint instead of pessimistic locking, Prisma only on the API.

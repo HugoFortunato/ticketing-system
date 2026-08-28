@@ -17,7 +17,10 @@ import {
 } from "./schemas.js";
 
 export async function eventRoutes(app: FastifyInstance) {
-  app.get("/events", async () => listEvents());
+  app.get("/events", async (_request, reply) => {
+    const { events, cache } = await listEvents();
+    return reply.header("X-Cache", cache).send(events);
+  });
 
   app.get("/events/:id", async (request) => {
     const { id } = request.params as { id: string };

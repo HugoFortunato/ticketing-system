@@ -1,4 +1,4 @@
-import type { Event, Reservation, Seat, Session, Ticket, User } from "./types";
+import type { Event, EventListItem, Reservation, Seat, Session, Ticket, User } from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -35,7 +35,7 @@ async function request<T>(path: string, options: RequestInit = {}, userId?: stri
 
 export const api = {
   listUsers: () => request<User[]>("/users"),
-  listEvents: () => request<Event[]>("/events"),
+  listEvents: () => request<EventListItem[]>("/events"),
   getEvent: (id: string) => request<Event>(`/events/${id}`),
   getSession: (id: string) => request<Session>(`/sessions/${id}`),
   listSeats: (sessionId: string) =>

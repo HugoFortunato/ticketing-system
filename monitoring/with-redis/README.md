@@ -1,12 +1,12 @@
 # Com Redis
 
-Pasta vazia de propósito.
+Relatórios da V2 (cache na listagem de eventos). Assentos e reservas ainda sem Redis.
 
-Quando a V2 estiver no ar, rode os **mesmos** testes do `../README.md` e grave:
+| Arquivo | Estado |
+| --- | --- |
+| `events.md` | Preenchido em 2026-08-28. Mesmo k6 que `../without-redis/events.md`. |
+| `seats.md` | Ainda não. |
+| `reservations.md` | Ainda não. |
+| `raw/events-*.json` | Sumários k6 do `GET /events`. |
 
-- `events.md`
-- `seats.md`
-- `reservations.md`
-- `raw/*.json`
-
-Compare mediana, p95, req/s e `reservation_conflicts` com `../without-redis/`.
+Compare mediana, p95 e req/s com [`../without-redis/events.md`](../without-redis/events.md).
