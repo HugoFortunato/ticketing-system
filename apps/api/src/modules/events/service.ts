@@ -3,7 +3,8 @@ import { prisma } from "../../lib/prisma.js";
 import { BadRequestError, NotFoundError } from "../../lib/errors.js";
 import {
   EVENTS_LIST_CACHE_KEY,
-  invalidateEventsListCache,
+  eventDetailCacheKey,
+  invalidateEventReadCaches,
   readJsonCache,
   writeJsonCache,
 } from "../../lib/redis.js";
@@ -16,7 +17,7 @@ const eventInclude = {
   },
 };
 
-const eventListSelect = {
+export const eventListSelect = {
   id: true,
   name: true,
   category: true,
@@ -48,7 +49,7 @@ export type EventListResult = {
   cache: "HIT" | "MISS" | "OFF";
 };
 
-function toListItem(event: {
+export function toListItem(event: {
   id: string;
   name: string;
   category: string;
@@ -71,7 +72,6 @@ export async function listEvents(): Promise<EventListResult> {
   if (env.EVENTS_CACHE_ENABLED) {
     const cached = await readJsonCache<EventListItem[]>(EVENTS_LIST_CACHE_KEY);
     if (cached) {
-      console.log("cacheddddd")
       return { events: cached, cache: "HIT" };
     }
   }
@@ -90,7 +90,31 @@ export async function listEvents(): Promise<EventListResult> {
   return { events, cache: "OFF" };
 }
 
+export type EventDetailResult = {
+  event: unknown;
+  cache: "HIT" | "MISS" | "OFF";
+};
+
 export async function getEvent(id: string) {
+  const { event } = await getEventWithCache(id);
+  return event as {
+    id: string;
+    venueId: string;
+    venue: unknown;
+    sessions: unknown[];
+  };
+}
+
+export async function getEventWithCache(id: string): Promise<EventDetailResult> {
+  const cacheKey = eventDetailCacheKey(id);
+
+  if (env.EVENTS_CACHE_ENABLED) {
+    const cached = await readJsonCache<unknown>(cacheKey);
+    if (cached) {
+      return { event: cached, cache: "HIT" };
+    }
+  }
+
   const event = await prisma.event.findUnique({
     where: { id },
     include: eventInclude,
@@ -98,7 +122,13 @@ export async function getEvent(id: string) {
   if (!event) {
     throw new NotFoundError("Evento não encontrado");
   }
-  return event;
+
+  if (env.EVENTS_CACHE_ENABLED) {
+    await writeJsonCache(cacheKey, event, env.EVENTS_CACHE_TTL_SECONDS);
+    return { event, cache: "MISS" };
+  }
+
+  return { event, cache: "OFF" };
 }
 
 export async function createEvent(body: CreateEventBody) {
@@ -111,7 +141,7 @@ export async function createEvent(body: CreateEventBody) {
     data: body,
     include: eventInclude,
   });
-  await invalidateEventsListCache();
+  await invalidateEventReadCaches();
   return created;
 }
 
@@ -129,14 +159,14 @@ export async function updateEvent(id: string, body: UpdateEventBody) {
     data: body,
     include: eventInclude,
   });
-  await invalidateEventsListCache();
+  await invalidateEventReadCaches(id);
   return updated;
 }
 
 export async function deleteEvent(id: string) {
   await getEvent(id);
   await prisma.event.delete({ where: { id } });
-  await invalidateEventsListCache();
+  await invalidateEventReadCaches(id);
 }
 
 export async function createSession(eventId: string, body: CreateSessionBody) {
@@ -169,6 +199,6 @@ export async function createSession(eventId: string, body: CreateSessionBody) {
       venue: true,
     },
   });
-  await invalidateEventsListCache();
+  await invalidateEventReadCaches(eventId);
   return session;
 }

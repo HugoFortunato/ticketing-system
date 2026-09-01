@@ -130,6 +130,30 @@ describe("fluxos críticos", () => {
     expect(hit.json()).toEqual(body);
   });
 
+  it("detalha um evento com venue, sessões e usa cache", async () => {
+    const { event } = await createFixture();
+    const miss = await app.inject({ method: "GET", url: `/events/${event.id}` });
+    expect(miss.statusCode).toBe(200);
+    expect(miss.headers["x-cache"]).toBe("MISS");
+
+    const body = miss.json() as Record<string, unknown>;
+    expect(body.id).toBe(event.id);
+    expect(body).toHaveProperty("description");
+    expect(Array.isArray(body.sessions)).toBe(true);
+    expect(body.venue).toEqual(
+      expect.objectContaining({
+        name: expect.any(String),
+        city: expect.any(String),
+        address: expect.any(String),
+      }),
+    );
+
+    const hit = await app.inject({ method: "GET", url: `/events/${event.id}` });
+    expect(hit.statusCode).toBe(200);
+    expect(hit.headers["x-cache"]).toBe("HIT");
+    expect(hit.json().id).toBe(event.id);
+  });
+
   it("cria uma sessão", async () => {
     const { event } = await createFixture();
     const startsAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
@@ -236,5 +260,38 @@ describe("fluxos críticos", () => {
 
     expect(second.statusCode).toBe(409);
     expect(second.json().error).toBe("CONFLICT");
+  });
+
+  it("pesquisa eventos no Postgres e devolve o payload da home", async () => {
+    const { event } = await createFixture();
+    const unique = `ZebraSearch${Date.now()}`;
+    await prisma.event.update({
+      where: { id: event.id },
+      data: { name: unique },
+    });
+
+    const empty = await app.inject({ method: "GET", url: "/search" });
+    expect(empty.statusCode).toBe(200);
+    expect(empty.headers["x-search-engine"]).toBe("postgres");
+    expect(empty.json()).toEqual([]);
+
+    const found = await app.inject({
+      method: "GET",
+      url: `/search?q=${encodeURIComponent(unique)}`,
+    });
+    expect(found.statusCode).toBe(200);
+    expect(found.headers["x-search-engine"]).toBe("postgres");
+    const body = found.json() as Record<string, unknown>[];
+    expect(body).toHaveLength(1);
+    expect(body[0]).toMatchObject({
+      id: event.id,
+      name: unique,
+    });
+    expect(body[0]).not.toHaveProperty("description");
+    expect(body[0]).not.toHaveProperty("sessions");
+
+    const miss = await app.inject({ method: "GET", url: "/search?q=zzzz-nenhum-evento" });
+    expect(miss.statusCode).toBe(200);
+    expect(miss.json()).toEqual([]);
   });
 });

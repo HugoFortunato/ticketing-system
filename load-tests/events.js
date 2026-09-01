@@ -3,6 +3,10 @@ import { check, sleep } from "k6";
 import { getConfig } from "./helpers.js";
 
 const config = getConfig();
+const isDetail = (__ENV.TARGET || "list") === "detail";
+const url = isDetail
+  ? `${config.baseUrl}/events/${config.eventId}`
+  : `${config.baseUrl}/events`;
 
 export const options = {
   vus: config.vus,
@@ -14,10 +18,11 @@ export const options = {
 };
 
 export default function () {
-  const response = http.get(`${config.baseUrl}/events`);
+  const response = http.get(url);
   check(response, {
     "status 200": (res) => res.status === 200,
-    "retorna lista": (res) => Array.isArray(res.json()),
+    "corpo ok": (res) =>
+      isDetail ? Boolean(res.json("id") && res.json("sessions")) : Array.isArray(res.json()),
   });
   sleep(0.1);
 }

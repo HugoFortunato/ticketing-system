@@ -1,0 +1,24 @@
+{
+  "name": "indexer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/worker.ts",
+    "start": "tsx src/worker.ts",
+    "backfill": "tsx src/backfill.ts",
+    "ensure-index": "tsx src/ensure-index.ts",
+    "postinstall": "prisma generate --schema ../api/prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@elastic/elasticsearch": "^8.17.0",
+    "@prisma/client": "^6.3.1",
+    "dotenv": "^16.4.7",
+    "kafkajs": "^2.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "prisma": "^6.3.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

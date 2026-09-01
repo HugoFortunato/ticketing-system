@@ -8,14 +8,18 @@ Os testes **sem Redis** e **com Redis** devem ser idênticos para a comparação
 | --- | --- |
 | `without-redis/` | V1 (PostgreSQL puro). Já preenchida em 2026-08-26. |
 | `with-redis/` | V2+. Copiar a mesma estrutura de arquivos após rodar os mesmos scripts. |
+| `without-es/` | V3 pesquisa no Postgres (`ILIKE`). |
+| `with-es/` | V3 pesquisa no Elasticsearch (CDC quente). |
 
 ## Testes
 
 | Arquivo | Script k6 | Endpoint |
 | --- | --- | --- |
 | `events.md` | `load-tests/events.js` | `GET /events` |
+| `event-detail.md` | `load-tests/events.js` com `TARGET=detail` | `GET /events/:id` |
 | `seats.md` | `load-tests/seats.js` | `GET /sessions/:sessionId/seats` |
 | `reservations.md` | `load-tests/reservations.js` | `GET seats` + `POST /sessions/:sessionId/reservations` |
+| `search.md` | `load-tests/search.js` | `GET /search?q=` |
 
 JSON bruto do k6: `raw/<teste>-<VUs>.json`.
 
@@ -36,6 +40,12 @@ for vus in 10 50 100 500 1000; do
 done
 
 for vus in 10 50 100 500 1000; do
+  k6 run -e TARGET=detail -e VUS="$vus" -e DURATION="$DURATION" \
+    --summary-export="$OUT/event-detail-${vus}.json" \
+    load-tests/events.js
+done
+
+for vus in 10 50 100 500 1000; do
   k6 run -e VUS="$vus" -e DURATION="$DURATION" \
     --summary-export="$OUT/seats-${vus}.json" \
     load-tests/seats.js
@@ -47,6 +57,13 @@ for vus in 10 50 100 500 1000; do
   k6 run -e VUS="$vus" -e DURATION="$DURATION" \
     --summary-export="$OUT/reservations-${vus}.json" \
     load-tests/reservations.js
+done
+
+# pesquisa (Postgres ou ES, conforme SEARCH_ENGINE)
+for vus in 10 50 100 500 1000; do
+  k6 run -e VUS="$vus" -e DURATION="$DURATION" \
+    --summary-export="$OUT/search-${vus}.json" \
+    load-tests/search.js
 done
 ```
 

@@ -22,6 +22,9 @@ async function request<T>(path: string, options: RequestInit = {}, userId?: stri
   }
 
   const response = await fetch(`${API_URL}${path}`, { ...options, headers });
+  if (options.signal?.aborted) {
+    throw new DOMException("Aborted", "AbortError");
+  }
   if (response.status === 204) {
     return undefined as T;
   }
@@ -35,7 +38,9 @@ async function request<T>(path: string, options: RequestInit = {}, userId?: stri
 
 export const api = {
   listUsers: () => request<User[]>("/users"),
-  listEvents: () => request<EventListItem[]>("/events"),
+  listEvents: (signal?: AbortSignal) => request<EventListItem[]>("/events", { signal }),
+  searchEvents: (q: string, signal?: AbortSignal) =>
+    request<EventListItem[]>(`/search?q=${encodeURIComponent(q)}`, { signal }),
   getEvent: (id: string) => request<Event>(`/events/${id}`),
   getSession: (id: string) => request<Session>(`/sessions/${id}`),
   listSeats: (sessionId: string) =>

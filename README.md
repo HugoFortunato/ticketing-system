@@ -32,17 +32,20 @@ This repo is **not** a production SaaS, a faithful Ticketmaster clone, or a fore
 
 ## Architecture
 
-### Today (V1)
+### Today (V3 parcial)
 
 ```
 Frontend (Vite + React)
         ↓ HTTP
-Backend (Fastify, modular monolith)
-        ↓ SQL                    ↓ cache GET /events
-PostgreSQL                    Redis
+Backend (Fastify) ── SEARCH_ENGINE=postgres ──► PostgreSQL (ILIKE)
+        │                SEARCH_ENGINE=elasticsearch
+        │                      ↓
+        │                 Search Service :3001 → Elasticsearch
+        ↓ SQL / Redis
+PostgreSQL ── Debezium ──► Kafka ──► Indexer ──► Elasticsearch
 ```
 
-One Fastify process, organized by domain (`events`, `sessions`, `seats`, `reservations`, `tickets`). `GET /events` is a slim list (card fields + next session date) cached in Redis. Seat concurrency is the unique `(sessionId, seatId)` constraint in Postgres.
+`GET /events` e `GET /events/:id` continuam no Fastify (Redis). `GET /search?q=` no Postgres (baseline) ou no Search Service. Gateway e Booking-à-parte ainda não existem.
 
 ### Target (system design)
 
@@ -59,13 +62,13 @@ The diagram below is the **north star** — it is not all in code yet. V2 starts
 | **PostgreSQL** | Source of truth |
 | **Debezium → Kafka → Worker** | CDC: database changes feed the search index |
 
-Each piece lands when the baseline shows the matching bottleneck. Future reports: [`monitoring/with-redis/`](monitoring/with-redis/).
+Each piece lands when the baseline shows the matching bottleneck. Relatórios: [`monitoring/with-redis/`](monitoring/with-redis/), [`monitoring/without-es/`](monitoring/without-es/), [`monitoring/with-es/`](monitoring/with-es/).
 
 ---
 
 ## Getting started
 
-Prerequisites: **Node 20+**, **pnpm 9+**, **Docker** (PostgreSQL + Redis). **k6** is only needed for load tests.
+Prerequisites: **Node 20+**, **pnpm 9+**, **Docker** (PostgreSQL + Redis; Kafka, Debezium e Elasticsearch para a pesquisa V3). **k6** is only needed for load tests.
 
 ```bash
 pnpm install
@@ -88,13 +91,27 @@ pnpm test          # critical API flows
 pnpm db:studio     # Prisma Studio on :5555
 ```
 
+Pesquisa no Elasticsearch (opcional; a barra funciona no Postgres com `SEARCH_ENGINE=postgres`):
+
+```bash
+# WSL: docker.exe compose up -d
+pnpm db:up
+pnpm search:register-debezium
+pnpm search:backfill
+pnpm --filter search start    # :3001
+pnpm --filter indexer start   # CDC
+SEARCH_ENGINE=elasticsearch pnpm --filter api dev
+```
+
 ### Layout
 
 ```
 apps/api          Fastify + Prisma
 apps/web          Vite + React
+apps/search       GET /search no Elasticsearch
+apps/indexer      CDC Debezium → índice
 load-tests/       k6 scripts
-monitoring/       load reports (with / without Redis)
+monitoring/       load reports (Redis / Elasticsearch)
 docs/images/      system design
 specs/            V1 spec
 ```
@@ -190,7 +207,7 @@ V1 auth: `x-user-id` header (no JWT). Seed: user Ana `11111111-1111-4111-a111-11
 
 | Method | Route |
 | --- | --- |
-| `GET` | `/health` `/users` `/venues` `/events` `/events/:id` `/sessions/:id` `/sessions/:id/seats` `/reservations/:id` `/tickets/:id` |
+| `GET` | `/health` `/users` `/venues` `/events` `/events/:id` `/search` `/sessions/:id` `/sessions/:id/seats` `/reservations/:id` `/tickets/:id` |
 | `POST` | `/events` `/events/:id/sessions` `/sessions/:id/reservations` `/reservations/:id/confirm` |
 | `PATCH` / `DELETE` | `/events/:id` · cancel reservation |
 
@@ -204,7 +221,7 @@ Flow: list → session → seat map (`available \| held \| sold`) → `PENDING` 
 | --- | --- | --- |
 | **V1** | Monolith + Postgres | Product and measurement. Done. |
 | **V2** (parcial) | Redis cache em `GET /events` | Listagem saturava o Postgres; detalhe do evento e hold de reserva ainda sem cache |
-| **V3+** | Kafka, Elasticsearch, Debezium/CDC, gateway | Search, decoupling, and projection — when reads/index need it |
+| **V3** (parcial) | `GET /search` + barra; ES + Debezium + Kafka + indexer | Typeahead. Baseline Postgres em `monitoring/without-es/`; ES em `monitoring/with-es/`. |
 
 V1 choices (deliberately simple): Fastify instead of Nest, Vite instead of Next, unique constraint instead of pessimistic locking, Prisma only on the API.
 

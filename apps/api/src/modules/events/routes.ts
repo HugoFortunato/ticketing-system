@@ -3,7 +3,7 @@ import {
   createEvent,
   createSession,
   deleteEvent,
-  getEvent,
+  getEventWithCache,
   listEvents,
   updateEvent,
 } from "./service.js";
@@ -22,9 +22,10 @@ export async function eventRoutes(app: FastifyInstance) {
     return reply.header("X-Cache", cache).send(events);
   });
 
-  app.get("/events/:id", async (request) => {
+  app.get("/events/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
-    return getEvent(id);
+    const { event, cache } = await getEventWithCache(id);
+    return reply.header("X-Cache", cache).send(event);
   });
 
   app.post(

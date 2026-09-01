@@ -17,7 +17,13 @@
     "db:studio": "pnpm --filter api db:studio",
     "test": "pnpm --filter api test",
     "load:events": "k6 run load-tests/events.js",
+    "load:event-detail": "k6 run -e TARGET=detail load-tests/events.js",
     "load:seats": "k6 run load-tests/seats.js",
-    "load:reservations": "k6 run load-tests/reservations.js"
+    "load:reservations": "k6 run load-tests/reservations.js",
+    "load:search": "k6 run load-tests/search.js",
+    "dev:search": "pnpm --filter search dev",
+    "dev:indexer": "pnpm --filter indexer dev",
+    "search:backfill": "pnpm --filter indexer backfill",
+    "search:register-debezium": "bash scripts/register-debezium.sh"
   }
 }

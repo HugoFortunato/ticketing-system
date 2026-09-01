@@ -3,6 +3,10 @@ import { env } from "../config/env.js";
 
 export const EVENTS_LIST_CACHE_KEY = "events:list";
 
+export function eventDetailCacheKey(id: string) {
+  return `events:detail:${id}`;
+}
+
 export const redis = env.EVENTS_CACHE_ENABLED
   ? new Redis(env.REDIS_URL, {
       maxRetriesPerRequest: 2,
@@ -53,4 +57,15 @@ export async function deleteCache(key: string) {
 
 export async function invalidateEventsListCache() {
   await deleteCache(EVENTS_LIST_CACHE_KEY);
+}
+
+export async function invalidateEventDetailCache(eventId: string) {
+  await deleteCache(eventDetailCacheKey(eventId));
+}
+
+export async function invalidateEventReadCaches(eventId?: string) {
+  await invalidateEventsListCache();
+  if (eventId) {
+    await invalidateEventDetailCache(eventId);
+  }
 }

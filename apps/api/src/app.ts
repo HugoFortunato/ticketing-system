@@ -10,6 +10,7 @@ import { eventRoutes } from "./modules/events/routes.js";
 import { reservationRoutes } from "./modules/reservations/routes.js";
 import { seatRoutes } from "./modules/seats/routes.js";
 import { sessionRoutes } from "./modules/sessions/routes.js";
+import { searchRoutes } from "./modules/search/routes.js";
 import { ticketRoutes } from "./modules/tickets/routes.js";
 import { userRoutes } from "./modules/users/routes.js";
 import { venueRoutes } from "./modules/venues/routes.js";
@@ -30,6 +31,7 @@ export async function buildApp() {
   await app.register(userRoutes);
   await app.register(venueRoutes);
   await app.register(eventRoutes);
+  await app.register(searchRoutes);
   await app.register(sessionRoutes);
   await app.register(seatRoutes);
   await app.register(reservationRoutes);

@@ -1,7 +1,7 @@
 export function getConfig() {
   return {
     baseUrl: __ENV.BASE_URL || "http://localhost:3000",
-    sessionId: __ENV.SESSION_ID || "44444444-4444-4444-a444-444444444441",
+    eventId: __ENV.EVENT_ID || "33333333-3333-4333-a333-333333333331",
     userIds: (__ENV.USER_IDS || [
       "11111111-1111-4111-a111-111111111111",
       "11111111-1111-4111-a111-111111111112",
@@ -11,6 +11,7 @@ export function getConfig() {
     ].join(",")).split(",").filter(Boolean),
     vus: Number(__ENV.VUS || 10),
     duration: __ENV.DURATION || "30s",
+    searchQuery: __ENV.SEARCH_QUERY || "noite",
   };
 }
 

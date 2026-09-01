@@ -6,7 +6,10 @@ const app = await buildApp();
 try {
   await app.listen({ port: env.PORT, host: env.HOST });
   app.log.info(
-    { eventsCacheEnabled: env.EVENTS_CACHE_ENABLED },
+    {
+      eventsCacheEnabled: env.EVENTS_CACHE_ENABLED,
+      searchEngine: env.SEARCH_ENGINE,
+    },
     env.EVENTS_CACHE_ENABLED
       ? "GET /events usa Redis"
       : "GET /events sem Redis (Postgres em todo request)",
