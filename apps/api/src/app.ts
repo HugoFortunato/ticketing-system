@@ -6,14 +6,15 @@ import { prisma } from "./lib/prisma.js";
 import { redis } from "./lib/redis.js";
 import { setupErrorHandler } from "./plugins/error-handler.js";
 import { setupRequestLogger } from "./plugins/request-logger.js";
-import { eventRoutes } from "./modules/events/routes.js";
-import { reservationRoutes } from "./modules/reservations/routes.js";
-import { seatRoutes } from "./modules/seats/routes.js";
-import { sessionRoutes } from "./modules/sessions/routes.js";
-import { searchRoutes } from "./modules/search/routes.js";
-import { ticketRoutes } from "./modules/tickets/routes.js";
-import { userRoutes } from "./modules/users/routes.js";
-import { venueRoutes } from "./modules/venues/routes.js";
+//  import { eventRoutes } from "./modules/events/routes.js";
+// import { reservationRoutes } from "./modules/reservations/routes.js";
+// import { seatRoutes } from "./modules/seats/routes.js";
+// import { sessionRoutes } from "./modules/sessions/routes.js";
+// import { searchRoutes } from "./modules/search/routes.js";
+// import { ticketRoutes } from "./modules/tickets/routes.js";
+// import { userRoutes } from "./modules/users/routes.js";
+// import { venueRoutes } from "./modules/venues/routes.js";
+import { appRoutes } from "./@http/routes.js";
 
 export async function buildApp() {
   const app = Fastify({
@@ -23,19 +24,22 @@ export async function buildApp() {
   });
 
   await app.register(cors, { origin: true });
+
   setupErrorHandler(app);
   setupRequestLogger(app);
 
   app.get("/health", async () => ({ status: "ok" }));
 
-  await app.register(userRoutes);
-  await app.register(venueRoutes);
-  await app.register(eventRoutes);
-  await app.register(searchRoutes);
-  await app.register(sessionRoutes);
-  await app.register(seatRoutes);
-  await app.register(reservationRoutes);
-  await app.register(ticketRoutes);
+  // await app.register(userRoutes);
+  // await app.register(venueRoutes);
+  // await app.register(eventRoutes);
+  // await app.register(searchRoutes);
+  // await app.register(sessionRoutes);
+  // await app.register(seatRoutes);
+  // await app.register(reservationRoutes);
+  // await app.register(ticketRoutes);
+
+  await app.register(appRoutes);
 
   app.addHook("onClose", async () => {
     await prisma.$disconnect();

@@ -1,5 +1,6 @@
 import type { FastifyError, FastifyInstance } from "fastify";
 import { Prisma } from "@prisma/client";
+import { ZodError } from "zod";
 import { AppError } from "../lib/errors.js";
 
 function isValidationError(error: unknown): error is FastifyError {
@@ -24,6 +25,14 @@ export function setupErrorHandler(app: FastifyInstance) {
       return reply.status(409).send({
         error: "CONFLICT",
         message: "Um ou mais assentos já não estão disponíveis",
+      });
+    }
+
+    if (error instanceof ZodError) {
+      return reply.status(400).send({
+        error: "VALIDATION_ERROR",
+        message: "Body inválido",
+        issues: error.issues,
       });
     }
 
