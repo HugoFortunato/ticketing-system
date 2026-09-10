@@ -13,31 +13,28 @@ export async function createEvent(request: FastifyRequest, reply: FastifyReply) 
     venueId: z.string(),
   })
 
-  const { name, description, imageUrl, category, venueId } = createEventBodySchema.parse(request.body)
+  const { name, description, imageUrl, category, venueId } =
+    createEventBodySchema.parse(request.body)
 
   try {
     const createEventUseCase = makeCreateEventUseCase()
 
-    const event = await createEventUseCase.execute({
+    const { event } = await createEventUseCase.execute({
       name,
       description,
       imageUrl,
       category,
       venueId,
     })
-    
+
     return reply.status(201).send({
       event,
     })
-  
   } catch (err) {
-
     if (err instanceof EventAlreadyExistsError) {
       return reply.status(409).send({ message: err.message })
     }
 
-    return reply.status(201).send() 
+    throw err
   }
-
-  
 }

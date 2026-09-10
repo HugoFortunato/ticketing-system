@@ -38,10 +38,16 @@ async function request<T>(path: string, options: RequestInit = {}, userId?: stri
 
 export const api = {
   listUsers: () => request<User[]>("/users"),
-  listEvents: (signal?: AbortSignal) => request<EventListItem[]>("/events", { signal }),
+  listEvents: async (signal?: AbortSignal) => {
+    const data = await request<{ events: EventListItem[] }>("/events", { signal });
+    return data.events;
+  },
+  getEvent: async (id: string) => {
+    const data = await request<{ event: Event }>(`/events/${id}`);
+    return data.event;
+  },
   searchEvents: (q: string, signal?: AbortSignal) =>
     request<EventListItem[]>(`/search?q=${encodeURIComponent(q)}`, { signal }),
-  getEvent: (id: string) => request<Event>(`/events/${id}`),
   getSession: (id: string) => request<Session>(`/sessions/${id}`),
   listSeats: (sessionId: string) =>
     request<{

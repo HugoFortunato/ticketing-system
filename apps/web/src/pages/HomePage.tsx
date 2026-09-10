@@ -83,7 +83,7 @@ export function HomePage() {
             ? Array.from({ length: SKELETON_COUNT }, (_, index) => (
                 <EventCardSkeleton key={index} />
               ))
-            : events.map((event) => <EventCard key={event.id} event={event} />)}
+            : events?.map((event: EventListItem) => <EventCard key={event.id} event={event} />)}
         </div>
       )}
     </section>

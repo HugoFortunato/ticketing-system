@@ -28,6 +28,7 @@ export type EventListItem = {
   imageUrl: string;
   venue: { name: string; city: string };
   nextSessionStartsAt: string | null;
+  userId?: string | null;
 };
 
 export type Event = {

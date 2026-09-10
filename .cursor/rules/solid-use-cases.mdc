@@ -1,0 +1,15 @@
+---
+description: Use cases da API não importam ORM; Prisma/Drizzle só no adapter e na factory.
+globs: apps/api/src/@**/*.ts
+alwaysApply: false
+---
+
+# Domínio sem ORM
+
+Em `@use-cases` e nas interfaces `@repositories/*-repository.ts`:
+
+- Não importar `@prisma/client`, `Prisma.*`, `drizzle-orm` nem `postgres`
+- Contrato próprio (`CreateEventData`, `Event`, `EventDetail`, …)
+- Queries ORM só em `@repositories/prisma/` ou `@repositories/drizzle/`
+
+`chooseRepository` em `choose-factory.ts` só lê `EVENTS_ORM`. Cada agregado regista os adapters no seu `makeXRepository()`.

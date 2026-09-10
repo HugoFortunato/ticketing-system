@@ -1,0 +1,14 @@
+---
+description: Stack e papéis do lab de ticketing (sem Nest/Next; skills no repo).
+alwaysApply: true
+---
+
+# Ticketing lab
+
+Lê `AGENTS.md` se fores implementar ou desenhar. Stack: `.cursor/skills/tech-stack/SKILL.md`.
+
+- API: Fastify. Web: Vite + React. Sem Nest, sem Next.
+- Domínio em `apps/api/src/@*`: sem ORM. Prisma/Drizzle só no adapter (`EVENTS_ORM`).
+- Use case novo: skill `create-solid-use-case`.
+- k6: skill `k6-baseline`. Busca/CDC: `search-cdc`.
+- Responde em português.

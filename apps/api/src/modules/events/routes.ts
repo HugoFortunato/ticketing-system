@@ -1,6 +1,5 @@
 import type { FastifyInstance } from "fastify";
 import {
-  createEvent,
   createSession,
   deleteEvent,
   getEventWithCache,
@@ -8,10 +7,8 @@ import {
   updateEvent,
 } from "./service.js";
 import {
-  createEventSchema,
   createSessionSchema,
   updateEventSchema,
-  type CreateEventBody,
   type CreateSessionBody,
   type UpdateEventBody,
 } from "./schemas.js";
@@ -27,15 +24,6 @@ export async function eventRoutes(app: FastifyInstance) {
     const { event, cache } = await getEventWithCache(id);
     return reply.header("X-Cache", cache).send(event);
   });
-
-  app.post(
-    "/events",
-    { schema: { body: createEventSchema } },
-    async (request, reply) => {
-      const event = await createEvent(request.body as CreateEventBody);
-      return reply.status(201).send(event);
-    },
-  );
 
   app.patch(
     "/events/:id",

@@ -1,4 +1,6 @@
-import { prisma } from "../../lib/prisma.js"
+import { randomUUID } from "node:crypto"
+import { eq } from "drizzle-orm"
+import { getDrizzle } from "../../lib/drizzle.js"
 import type {
   CreateEventData,
   Event,
@@ -6,13 +8,7 @@ import type {
   EventListItem,
   EventsRepository,
 } from "../events-repository.js"
-
-const eventInclude = {
-  venue: true,
-  sessions: {
-    orderBy: { startsAt: "asc" as const },
-  },
-}
+import { events } from "./schema.js"
 
 function toDomainEvent(event: {
   id: string
@@ -38,48 +34,43 @@ function toDomainEvent(event: {
   }
 }
 
-export class PrismaEventsRepository implements EventsRepository {
+export class DrizzleEventsRepository implements EventsRepository {
   async create(data: CreateEventData): Promise<Event> {
-    const event = await prisma.event.create({
-      data: {
+    const now = new Date()
+    const [event] = await getDrizzle()
+      .insert(events)
+      .values({
+        id: randomUUID(),
         name: data.name,
         description: data.description,
         imageUrl: data.imageUrl,
         category: data.category,
+        venueId: data.venueId,
         userId: data.userId ?? null,
-        venue: {
-          connect: { id: data.venueId },
-        },
-      },
-    })
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning()
+
+    if (!event) {
+      throw new Error("Failed to create event")
+    }
 
     return toDomainEvent(event)
   }
 
   async findMany(): Promise<EventListItem[]> {
-    const rows = await prisma.event.findMany({
-      orderBy: { name: "asc" },
-      select: {
-        id: true,
-        name: true,
-        category: true,
-        imageUrl: true,
-        userId: true,
-        venue: {
-          select: {
-            name: true,
-            city: true,
-          },
-        },
+    const eventList = await getDrizzle().query.events.findMany({
+      orderBy: (event, { asc }) => [asc(event.name)],
+      with: {
+        venue: true,
         sessions: {
-          orderBy: { startsAt: "asc" },
-          take: 1,
-          select: { startsAt: true },
+          orderBy: (session, { asc }) => [asc(session.startsAt)],
         },
       },
     })
 
-    return rows.map((event) => ({
+    return eventList.map((event) => ({
       id: event.id,
       name: event.name,
       category: event.category,
@@ -91,9 +82,14 @@ export class PrismaEventsRepository implements EventsRepository {
   }
 
   async findById(id: string): Promise<EventDetail | null> {
-    const event = await prisma.event.findUnique({
-      where: { id },
-      include: eventInclude,
+    const event = await getDrizzle().query.events.findFirst({
+      where: eq(events.id, id),
+      with: {
+        venue: true,
+        sessions: {
+          orderBy: (session, { asc }) => [asc(session.startsAt)],
+        },
+      },
     })
 
     if (!event) {

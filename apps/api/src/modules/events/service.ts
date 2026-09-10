@@ -8,7 +8,7 @@ import {
   readJsonCache,
   writeJsonCache,
 } from "../../lib/redis.js";
-import type { CreateEventBody, CreateSessionBody, UpdateEventBody } from "./schemas.js";
+import type { CreateSessionBody, UpdateEventBody } from "./schemas.js";
 
 const eventInclude = {
   venue: true,
@@ -80,6 +80,8 @@ export async function listEvents(): Promise<EventListResult> {
     select: eventListSelect,
     orderBy: { name: "asc" },
   });
+
+  
   const events = rows.map(toListItem);
 
   if (env.EVENTS_CACHE_ENABLED) {
@@ -129,20 +131,6 @@ export async function getEventWithCache(id: string): Promise<EventDetailResult> 
   }
 
   return { event, cache: "OFF" };
-}
-
-export async function createEvent(body: CreateEventBody) {
-  const venue = await prisma.venue.findUnique({ where: { id: body.venueId } });
-  if (!venue) {
-    throw new BadRequestError("Local não encontrado");
-  }
-
-  const created = await prisma.event.create({
-    data: body,
-    include: eventInclude,
-  });
-  await invalidateEventReadCaches();
-  return created;
 }
 
 export async function updateEvent(id: string, body: UpdateEventBody) {

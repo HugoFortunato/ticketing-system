@@ -45,6 +45,8 @@ model Event {
   imageUrl    String
   category    String
   venueId     String
+  /// Autor do evento (opcional). Seed antigo fica null; create SOLID grava mock.
+  userId      String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -53,6 +55,7 @@ model Event {
 
   @@index([venueId])
   @@index([category])
+  @@index([userId])
 }
 
 model Session {
