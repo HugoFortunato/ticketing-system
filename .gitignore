@@ -12,3 +12,6 @@ coverage
 apps/api/.env
 apps/web/.env
 load-tests/.seed-ids.json
+apps/web/playwright-report
+apps/web/test-results
+apps/web/blob-report

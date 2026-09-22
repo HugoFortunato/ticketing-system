@@ -1,24 +1,25 @@
 # Agents — Ticketing System
 
-Laboratório de system design. O chat do Hugo orquestra; papéis e skills vivem neste repo.
+Laboratório de system design. O chat segue `/start-task`; papéis e skills neste repo.
 
 Não há Linear. Não copies o pipeline da Easy Schedule (PM / issues ENG).
+
+Feature não trivial: skill `spec-driven`. Sem spec em `SPEC_READY`, não implementar.
 
 ## Papéis
 
 | Papel | Arquivo | Faz | Não faz |
 | --- | --- | --- | --- |
-| Principal Engineer | `.cursor/agents/principal-engineer.md` | Desenho + skills | Implementar a feature |
-| Programmer | `.cursor/agents/programmer.md` | Código do plano / da skill | Inventar stack |
-| Reviewer | `.cursor/agents/reviewer.md` | Review do diff | Reescrever sem pedido |
-| QA | `.cursor/agents/qa.md` | `tsc`, testes, k6 se for carga | Push, inventar métrica |
-| SOLID implementer | `.cursor/agents/solid-use-case-implementer.md` | Extrair use case | Review |
-| SOLID reviewer | `.cursor/agents/solid-use-case-reviewer.md` | Review das camadas `@` | Implementar |
+| Product | `.cursor/agents/product.md` | Discovery + `docs/specs/` | Código; inventar regras |
+| Principal Engineer | `.cursor/agents/principal-engineer.md` | Plano a partir da spec + skills | Implementar; redefinir produto |
+| Programmer | `.cursor/agents/programmer.md` | Código do plano; corrige FAIL | Inventar stack; spec |
+| QA | `.cursor/agents/qa.md` | Critérios da spec + `tsc` / testes / Playwright se UI | Push; inventar métrica |
+| Reviewer | `.cursor/agents/reviewer.md` | Review do diff (incl. SOLID se `@`) | Reescrever sem pedido |
 
 Um Programmer por vez. Respostas em português.
 
 ## Skills de domínio
 
-`tech-stack`, `create-solid-use-case`, `k6-baseline`, `search-cdc`, `code-review`, `ensure-skill`.
+`spec-driven`, `tech-stack`, `create-solid-use-case`, `k6-baseline`, `search-cdc`, `code-review`, `ensure-skill`.
 
 Domínio novo (reservas, hold Redis, CDC extra) → PE usa `ensure-skill` a partir de código que **já existe**.

@@ -2,20 +2,24 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import type { Event } from "../api/types";
+import { useUser } from "../context/UserContext";
 import { formatDateTime } from "../lib/format";
 
 export function EventPage() {
   const { id } = useParams<{ id: string }>();
+  const { userId } = useUser();
   const [event, setEvent] = useState<Event | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
+    setEvent(null);
+    setError(null);
     api
-      .getEvent(id)
+      .getEvent(id, userId || undefined)
       .then(setEvent)
       .catch((err: Error) => setError(err.message));
-  }, [id]);
+  }, [id, userId]);
 
   if (error) return <p className="error">{error}</p>;
   if (!event) return <p>Carregando...</p>;

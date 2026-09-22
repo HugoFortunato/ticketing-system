@@ -8,7 +8,10 @@ alwaysApply: true
 Lê `AGENTS.md` se fores implementar ou desenhar. Stack: `.cursor/skills/tech-stack/SKILL.md`.
 
 - API: Fastify. Web: Vite + React. Sem Nest, sem Next.
-- Domínio em `apps/api/src/@*`: sem ORM. Prisma/Drizzle só no adapter (`EVENTS_ORM`).
+- Domínio em `apps/api/src/@*`: sem ORM. Prisma só no adapter.
 - Use case novo: skill `create-solid-use-case`.
 - k6: skill `k6-baseline`. Busca/CDC: `search-cdc`.
+- Feature nova: skill `spec-driven` (spec antes de código).
+- UI: Playwright (`pnpm test:e2e`) antes de fechar a task.
+- Schema/seed: workflow `database.md` (`pnpm db:migrate` / `pnpm db:seed`).
 - Responde em português.

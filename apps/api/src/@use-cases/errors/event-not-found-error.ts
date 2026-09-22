@@ -1,5 +1,7 @@
-export class EventNotFoundError extends Error {
+import { UseCaseError } from "./use-case-error.js"
+
+export class EventNotFoundError extends UseCaseError {
   constructor() {
-    super('Event not found.')
+    super(404, "Event not found.", "EVENT_NOT_FOUND")
   }
 }

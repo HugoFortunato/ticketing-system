@@ -9,6 +9,7 @@ await app.register(cors, { origin: true });
 app.get("/health", async () => ({ status: "ok" }));
 
 app.get("/search", async (request, reply) => {
+  console.log('batendo aqui 22222')
   const { q } = request.query as { q?: string };
   const term = (q ?? "").trim();
   if (!term) {

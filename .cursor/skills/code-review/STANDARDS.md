@@ -6,17 +6,17 @@ Modelo: `createEvent` / `getEvent` em `@use-cases/events/`, `@http/@controllers/
 
 Anti-modelo: `apps/api/src/modules/*/service.ts` (legado).
 
-Novo agregado (sessão, reserva, ingresso): contrato `*-repository.ts` próprio + `makeXRepository()` com `chooseRepository({ prisma, drizzle })`. Os dois adapters no mesmo commit se o método for novo.
+Novo agregado (sessão, reserva, ingresso): contrato `*-repository.ts` próprio + `makeXRepository()` com adapter Prisma.
 
 ## HTTP
 
 - 201/200 só no sucesso.
-- 404/409 via classes em `@use-cases/errors/`.
-- Corpo alinhado: `{ event }` (ou lista).
+- 400/401/403/404/409 via `UseCaseError` / `AppError` no error-handler.
+- Corpo de erro: `{ error, message }`. Sucesso: `{ event }` / `{ events }` / `{ session }`.
 
 ## Persistência
 
-`chooseRepository` lê `env.EVENTS_ORM`. Não ramificar `if (prisma)` dentro do use case.
+`makeXRepository()` instancia Prisma. Não ramificar ORM dentro do use case.
 
 ## Cache / busca
 

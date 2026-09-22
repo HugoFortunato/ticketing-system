@@ -1,5 +1,7 @@
- export class ForbiddenError extends Error {
+import { UseCaseError } from "./use-case-error.js"
+
+export class ForbiddenError extends UseCaseError {
   constructor() {
-    super('You are not authorized to access this resource.')
+    super(403, "You are not authorized to access this resource.", "FORBIDDEN")
   }
 }

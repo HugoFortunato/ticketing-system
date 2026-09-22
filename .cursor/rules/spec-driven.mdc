@@ -1,0 +1,15 @@
+---
+description: Feature não trivial precisa de spec aprovada antes de código de produto.
+alwaysApply: true
+---
+
+# Spec-driven
+
+Se o pedido for feature ou regra de negócio nova:
+
+1. Skill `spec-driven` e `.ai/workflows/start-task.md`.
+2. Sem `docs/specs/<feature>.md` aprovado (estado `SPEC_READY`) **não** implementes.
+3. Product pergunta; não inventa regras. PE não redefine produto.
+4. Evidência em `.ai/runs/<TASK-ID>/`. Sem Linear.
+
+Excepção: typo, rename, bug óbvio com causa no diff — podes corrigir e anotar o run.

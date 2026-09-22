@@ -10,7 +10,7 @@ import { setupRequestLogger } from "./plugins/request-logger.js";
 // import { reservationRoutes } from "./modules/reservations/routes.js";
 // import { seatRoutes } from "./modules/seats/routes.js";
 // import { sessionRoutes } from "./modules/sessions/routes.js";
-// import { searchRoutes } from "./modules/search/routes.js";
+//  import { searchRoutes } from "./modules/search/routes.js";
 // import { ticketRoutes } from "./modules/tickets/routes.js";
 // import { userRoutes } from "./modules/users/routes.js";
 // import { venueRoutes } from "./modules/venues/routes.js";

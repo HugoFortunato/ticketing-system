@@ -42,13 +42,21 @@ export const api = {
     const data = await request<{ events: EventListItem[] }>("/events", { signal });
     return data.events;
   },
-  getEvent: async (id: string) => {
-    const data = await request<{ event: Event }>(`/events/${id}`);
+  getEvent: async (id: string, userId?: string) => {
+    const data = await request<{ event: Event }>(`/events/${id}`, {}, userId);
     return data.event;
   },
-  searchEvents: (q: string, signal?: AbortSignal) =>
-    request<EventListItem[]>(`/search?q=${encodeURIComponent(q)}`, { signal }),
-  getSession: (id: string) => request<Session>(`/sessions/${id}`),
+  searchEvents: async (q: string, signal?: AbortSignal) => {
+    const data = await request<{ events: EventListItem[] }>(
+      `/search?query=${encodeURIComponent(q)}`,
+      { signal },
+    );
+    return data.events;
+  },
+  getSession: async (id: string) => {
+    const data = await request<{ session: Session }>(`/sessions/${id}`);
+    return data.session;
+  },
   listSeats: (sessionId: string) =>
     request<{
       sessionId: string;

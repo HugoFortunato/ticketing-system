@@ -4,6 +4,7 @@ import {
 } from "../../@repositories/events-repository.js"
 import { EventNotFoundError } from "../errors/event-not-found-error.js"
 import { ForbiddenError } from "../errors/forbidden-error.js"
+import { makeEventsRepository } from "../factories/make-events-repository.js"
 
 interface GetEventUseCaseRequest {
   id: string
@@ -20,19 +21,20 @@ export class GetEventUseCase {
   async execute({ id, userId }: GetEventUseCaseRequest): Promise<GetEventUseCaseResponse> {
     const event = await this.eventsRepository.findById(id)
 
-
     if (!event) {
       throw new EventNotFoundError()
     }
 
-
-    if (event?.userId !== userId) {
+    if (event.userId !== userId) {
       throw new ForbiddenError()
     }
 
-  
     return {
       event,
     }
   }
+}
+
+export function makeGetEventUseCase() {
+  return new GetEventUseCase(makeEventsRepository())
 }

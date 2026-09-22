@@ -18,7 +18,7 @@ Revise o **diff** (não o repo inteiro, salvo pedido).
 ## Checklist
 
 - [ ] Sem Nest/Next; sem ORM no use case ou na interface do repositório
-- [ ] Prisma/Drizzle só em `prisma/` / `drizzle/` + factory (`EVENTS_ORM`)
+- [ ] Prisma só em `@repositories/prisma/` + `makeXRepository()`
 - [ ] Controller: Zod; `catch` só erro de domínio; resto `throw err`; **nunca 2xx em falha**
 - [ ] Imports `.js` (NodeNext)
 - [ ] Rota nova em `@http/routes.ts` se for fatia SOLID

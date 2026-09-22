@@ -1,4 +1,6 @@
+import { Prisma } from "@prisma/client"
 import { prisma } from "../../lib/prisma.js"
+import { VenueNotFoundError } from "../../@use-cases/errors/venue-not-found-error.js"
 import type {
   CreateEventData,
   Event,
@@ -40,20 +42,27 @@ function toDomainEvent(event: {
 
 export class PrismaEventsRepository implements EventsRepository {
   async create(data: CreateEventData): Promise<Event> {
-    const event = await prisma.event.create({
-      data: {
-        name: data.name,
-        description: data.description,
-        imageUrl: data.imageUrl,
-        category: data.category,
-        userId: data.userId ?? null,
-        venue: {
-          connect: { id: data.venueId },
+    try {
+      const event = await prisma.event.create({
+        data: {
+          name: data.name,
+          description: data.description,
+          imageUrl: data.imageUrl,
+          category: data.category,
+          userId: data.userId ?? null,
+          venue: {
+            connect: { id: data.venueId },
+          },
         },
-      },
-    })
+      })
 
-    return toDomainEvent(event)
+      return toDomainEvent(event)
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
+        throw new VenueNotFoundError()
+      }
+      throw err
+    }
   }
 
   async findMany(): Promise<EventListItem[]> {

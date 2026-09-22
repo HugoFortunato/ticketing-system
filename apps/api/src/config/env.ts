@@ -22,7 +22,4 @@ export const env = {
     ? "elasticsearch"
     : "postgres") as "elasticsearch" | "postgres",
   SEARCH_SERVICE_URL: process.env.SEARCH_SERVICE_URL ?? "http://localhost:3001",
-  EVENTS_ORM: (process.env.EVENTS_ORM === "drizzle"
-    ? "drizzle"
-    : "prisma") as "prisma" | "drizzle",
 };

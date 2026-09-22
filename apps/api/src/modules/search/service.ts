@@ -24,6 +24,9 @@ export async function searchEvents(rawQuery: string | undefined): Promise<Search
     return { events: [], engine };
   }
 
+
+
+
   if (engine === "elasticsearch") {
     return { events: await searchViaSearchService(q), engine };
   }

@@ -13,7 +13,7 @@ Só o Principal Engineer (ou o Hugo pedindo documentação) cria skill. Programm
 
 ## Quando
 
-1. Liste `.cursor/skills/` (hoje: `tech-stack`, `create-solid-use-case`, `k6-baseline`, `search-cdc`, `code-review`, `ensure-skill`).
+1. Liste `.cursor/skills/` (hoje: `spec-driven`, `tech-stack`, `create-solid-use-case`, `k6-baseline`, `search-cdc`, `code-review`, `ensure-skill`).
 2. A tarefa toca um domínio **sem** skill (ex.: reservas SOLID, hold Redis, mapa de assentos).
 3. O padrão **já existe no repo**. Extraia; não projete arquitetura nova na skill.
 
