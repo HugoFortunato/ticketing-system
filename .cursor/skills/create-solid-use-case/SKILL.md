@@ -33,7 +33,7 @@ Imports ESM: `.js` (nunca `.ts`). NodeNext.
 | Eventos | `events-repository.ts` | `@use-cases/events/` | `create-event`, `get-event` |
 | Sessões | `sessions-repository.ts` (criar) | `@use-cases/sessions/` | mesmo recorte: HTTP → UC → repo |
 | Reservas | `reservations-repository.ts` (criar) | `@use-cases/reservations/` | unique `(sessionId, seatId)` no adapter; 409 no domínio |
-| Ingressos / assentos | `tickets-` / `seats-repository.ts` | pastas próprias | não misturar no `EventsRepository` |
+| Ingressos / assentos | `seats-repository.ts` | `@use-cases/seats/` | `list-session-seats`; tickets à parte |
 
 Um contrato por agregado. Não inchir `EventsRepository` com `createReservation`.
 

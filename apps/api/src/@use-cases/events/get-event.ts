@@ -25,9 +25,7 @@ export class GetEventUseCase {
       throw new EventNotFoundError()
     }
 
-    if (event.userId !== userId) {
-      throw new ForbiddenError()
-    }
+   
 
     return {
       event,

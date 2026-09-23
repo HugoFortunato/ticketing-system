@@ -69,7 +69,8 @@ export function SeatsPage() {
         {error ? <p className="error">{error}</p> : null}
         <button
           className="button"
-          disabled={selectedSeats.length === 0 || submitting}
+          type="button"
+          disabled={selectedSeats.length === 0 || submitting || !userId}
           onClick={() => void reserve()}
         >
           {submitting ? "Reservando..." : "Criar reserva"}

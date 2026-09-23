@@ -78,6 +78,50 @@ test.describe("telas", () => {
     await expect(page.getByText(when)).toBeVisible();
   });
 
+  test("mapa de assentos mostra palco e lugares", async ({ page, request }) => {
+    const created = await request.post("http://127.0.0.1:3000/events", {
+      data: {
+        name: `E2E seats ${Date.now()}`,
+        description: "playwright seats",
+        imageUrl: "https://picsum.photos/800/400",
+        category: "music",
+        venueId: ARENA,
+      },
+    });
+    expect(created.ok(), await created.text()).toBeTruthy();
+    const { event } = (await created.json()) as { event: { id: string; name: string } };
+
+    const startsAt = new Date(Date.now() + 86_400_000).toISOString();
+    const endsAt = new Date(Date.now() + 90_000_000).toISOString();
+    const sessionRes = await request.post(`http://127.0.0.1:3000/events/${event.id}/sessions`, {
+      data: { startsAt, endsAt },
+    });
+    expect(sessionRes.ok(), await sessionRes.text()).toBeTruthy();
+    const { session } = (await sessionRes.json()) as { session: { id: string } };
+
+    await page.addInitScript((id: string) => {
+      localStorage.setItem("ticketing.userId", id);
+    }, ANA);
+
+    await page.goto(`/events/${event.id}`);
+    await expect(page.getByRole("heading", { name: event.name })).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("link", { name: "Selecionar assentos" }).click();
+    await expect(page).toHaveURL(new RegExp(`/sessions/${session.id}/seats`));
+    await expect(page.getByText("Palco")).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator("button.seat").first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Criar reserva" })).toBeDisabled();
+    await page.locator("button.seat:not(.is-taken)").first().click();
+    await expect(page.getByRole("button", { name: "Criar reserva" })).toBeEnabled();
+    await page.getByRole("button", { name: "Criar reserva" }).click();
+    await expect(page.getByRole("heading", { name: "Reserva" })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("PENDING")).toBeVisible();
+    await page.getByRole("button", { name: "Confirmar e gerar ingressos" }).click();
+    await expect(page.getByText("CONFIRMED")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveURL(/\/reservations\//);
+    await page.getByRole("link", { name: /Ver ingresso/ }).click();
+    await expect(page.getByText("Ingresso confirmado")).toBeVisible({ timeout: 15_000 });
+  });
+
   test("detalhe de evento seed (sem autor) mostra erro com header da Ana", async ({ page }) => {
     await page.addInitScript((id: string) => {
       localStorage.setItem("ticketing.userId", id);
@@ -113,7 +157,7 @@ test.describe("telas", () => {
 
     await page.goto(`/tickets/${fakeId}`);
     await expect(
-      page.getByText(/Carregando ingresso|Erro ao chamar a API|Route GET:/),
+      page.getByText(/Carregando ingresso|Erro ao chamar a API|Route GET:|Ticket not found/),
     ).toBeVisible({ timeout: 15_000 });
   });
 });

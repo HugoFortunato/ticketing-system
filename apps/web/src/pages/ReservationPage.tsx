@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import type { Reservation } from "../api/types";
 import { useUser } from "../context/UserContext";
 import { formatDateTime, seatLabel } from "../lib/format";
 
-function remainingLabel(expiresAt: string) {
-  const diff = new Date(expiresAt).getTime() - Date.now();
+function remainingLabel(expiresAt: string, now: number) {
+  const diff = new Date(expiresAt).getTime() - now;
   if (diff <= 0) return "Expirada";
   const minutes = Math.floor(diff / 60000);
   const seconds = Math.floor((diff % 60000) / 1000);
@@ -16,11 +16,10 @@ function remainingLabel(expiresAt: string) {
 export function ReservationPage() {
   const { id } = useParams<{ id: string }>();
   const { userId } = useUser();
-  const navigate = useNavigate();
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
-  const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -36,39 +35,21 @@ export function ReservationPage() {
   }, [id]);
 
   async function confirm() {
-    if (!id) return;
-    setBusy(true);
+    if (!id || !userId) return;
+    setConfirming(true);
     setError(null);
     try {
-      const confirmed = await api.confirmReservation(id, userId);
-      setReservation(confirmed);
-      const firstTicket = confirmed.tickets[0];
-      if (firstTicket) {
-        navigate(`/tickets/${firstTicket.id}`);
-      }
+      const next = await api.confirmReservation(id, userId);
+      setReservation(next);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao confirmar");
+      setError(err instanceof Error ? err.message : "Falha ao confirmar reserva");
     } finally {
-      setBusy(false);
-    }
-  }
-
-  async function cancel() {
-    if (!id) return;
-    setBusy(true);
-    try {
-      setReservation(await api.cancelReservation(id, userId));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao cancelar");
-    } finally {
-      setBusy(false);
+      setConfirming(false);
     }
   }
 
   if (error && !reservation) return <p className="error">{error}</p>;
   if (!reservation) return <p>Carregando reserva...</p>;
-
-  void now;
 
   return (
     <section className="panel">
@@ -78,7 +59,7 @@ export function ReservationPage() {
         Status: <strong>{reservation.status}</strong>
       </p>
       {reservation.status === "PENDING" ? (
-        <p>Expira em {remainingLabel(reservation.expiresAt)}</p>
+        <p>Expira em {remainingLabel(reservation.expiresAt, now)}</p>
       ) : null}
       <p>
         {reservation.session.venue.name} · {formatDateTime(reservation.session.startsAt)}
@@ -91,10 +72,15 @@ export function ReservationPage() {
       {error ? <p className="error">{error}</p> : null}
       {reservation.status === "PENDING" ? (
         <div className="actions">
-          <button className="button" disabled={busy} onClick={() => void confirm()}>
-            Confirmar e gerar ingressos
+          <button
+            className="button"
+            type="button"
+            disabled={confirming || !userId}
+            onClick={() => void confirm()}
+          >
+            {confirming ? "Confirmando..." : "Confirmar e gerar ingressos"}
           </button>
-          <button className="button button-secondary" disabled={busy} onClick={() => void cancel()}>
+          <button className="button button-secondary" type="button" disabled title="Cancel na próxima task">
             Cancelar
           </button>
         </div>
